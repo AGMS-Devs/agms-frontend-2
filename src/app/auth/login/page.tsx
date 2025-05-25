@@ -86,7 +86,7 @@ function LoginContent() {
             className="w-24 h-24 mb-4 rounded-full bg-white p-2 shadow"
           />
           <h1 className="text-2xl font-bold text-center text-[#7c0a02] mb-6">
-            Automatic Graduation
+            Automated Graduation
             <br />
             Management System
           </h1>
