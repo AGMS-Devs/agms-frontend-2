@@ -96,7 +96,7 @@ export default function RectoratePage() {
       }
 
       await axios.post(
-        "http://localhost:5278/api/TopStudentLists/approve-rectorate",
+        "https://aoglu-agms-backend.onrender.com/api/TopStudentLists/approve-rectorate",
         {
           topStudentListId: currentList.id,
           isApproved: true,
@@ -152,7 +152,7 @@ export default function RectoratePage() {
       }
 
       await axios.post(
-        "http://localhost:5278/api/TopStudentLists/approve-rectorate",
+        "https://aoglu-agms-backend.onrender.com/api/TopStudentLists/approve-rectorate",
         {
           topStudentListId: currentList.id,
           isApproved: false,
@@ -197,16 +197,19 @@ export default function RectoratePage() {
         return;
       }
 
-      const res = await axios.get("http://localhost:5278/api/TopStudentLists", {
-        params: {
-          PageIndex: 0,
-          PageSize: 50,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await axios.get(
+        "https://aoglu-agms-backend.onrender.com/api/TopStudentLists",
+        {
+          params: {
+            PageIndex: 0,
+            PageSize: 50,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (Array.isArray(res.data.items) && res.data.items.length > 0) {
         // Sadece rektörlüğe gönderilmiş listeleri filtrele

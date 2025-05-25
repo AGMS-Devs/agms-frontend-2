@@ -130,7 +130,7 @@ export default function TopStudentsPage() {
       }
 
       await axios.post(
-        "http://localhost:5278/api/TopStudentLists/approve-student-affairs",
+        "https://aoglu-agms-backend.onrender.com/api/TopStudentLists/approve-student-affairs",
         {
           topStudentListId: currentList.id,
           isApproved: true,
@@ -183,7 +183,7 @@ export default function TopStudentsPage() {
       }
 
       await axios.post(
-        "http://localhost:5278/api/TopStudentLists/approve-student-affairs",
+        "https://aoglu-agms-backend.onrender.com/api/TopStudentLists/approve-student-affairs",
         {
           topStudentListId: currentList.id,
           isApproved: false,
@@ -237,7 +237,7 @@ export default function TopStudentsPage() {
       }
 
       await axios.post(
-        "http://localhost:5278/api/TopStudentLists/send-to-rectorate",
+        "https://aoglu-agms-backend.onrender.com/api/TopStudentLists/send-to-rectorate",
         {
           topStudentListId: currentList.id,
         },
@@ -281,16 +281,19 @@ export default function TopStudentsPage() {
         return;
       }
 
-      const res = await axios.get("http://localhost:5278/api/TopStudentLists", {
-        params: {
-          PageIndex: 0,
-          PageSize: 50,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await axios.get(
+        "https://aoglu-agms-backend.onrender.com/api/TopStudentLists",
+        {
+          params: {
+            PageIndex: 0,
+            PageSize: 50,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (Array.isArray(res.data.items) && res.data.items.length > 0) {
         setLists(res.data.items);
@@ -434,9 +437,7 @@ export default function TopStudentsPage() {
     <AuthenticatedLayout>
       <div className="p-8 max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Top Students
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Top Students</h1>
           <div className="flex items-center space-x-4">
             {/* Approval Status Indicator */}
             {isCurrentListApproved() && (

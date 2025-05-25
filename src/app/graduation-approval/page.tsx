@@ -6,7 +6,8 @@ import { axiosInstance } from "@/lib/axios";
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, FileText } from "lucide-react";
+import TranscriptModal from "@/components/modals/TranscriptModal";
 
 const BACKEND_URL = "/graduationprocesses";
 const ROLE_ENDPOINT_MAP: Record<string, string> = {
@@ -63,24 +64,37 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   title: string;
   message: string;
-  type: 'approve' | 'reject';
+  type: "approve" | "reject";
 }
 
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, type }: ConfirmModalProps) => {
+const ConfirmModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  type,
+}: ConfirmModalProps) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <div className="flex items-center gap-3 mb-6">
-          <AlertCircle className={`w-6 h-6 ${type === 'approve' ? 'text-green-600' : 'text-red-600'}`} />
-          <h3 className={`text-xl font-bold ${type === 'approve' ? 'text-green-700' : 'text-red-700'}`}>
+          <AlertCircle
+            className={`w-6 h-6 ${
+              type === "approve" ? "text-green-600" : "text-red-600"
+            }`}
+          />
+          <h3
+            className={`text-xl font-bold ${
+              type === "approve" ? "text-green-700" : "text-red-700"
+            }`}
+          >
             {title}
           </h3>
         </div>
-        <p className="text-gray-900 text-base font-medium mb-8">
-          {message}
-        </p>
+        <p className="text-gray-900 text-base font-medium mb-8">{message}</p>
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
@@ -94,12 +108,12 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, type }: Conf
               onClose();
             }}
             className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${
-              type === 'approve'
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-red-600 hover:bg-red-700'
+              type === "approve"
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-red-600 hover:bg-red-700"
             } shadow-sm hover:shadow-md transition-all`}
           >
-            {type === 'approve' ? 'Approve' : 'Reject'}
+            {type === "approve" ? "Approve" : "Reject"}
           </button>
         </div>
       </div>
@@ -120,21 +134,32 @@ export default function GraduationApprovalPage() {
     isOpen: boolean;
     title: string;
     message: string;
-    type: 'approve' | 'reject';
+    type: "approve" | "reject";
     onConfirm: () => void;
   }>({
     isOpen: false,
-    title: '',
-    message: '',
-    type: 'approve',
+    title: "",
+    message: "",
+    type: "approve",
     onConfirm: () => {},
+  });
+
+  // Transcript modal state
+  const [transcriptModal, setTranscriptModal] = useState<{
+    isOpen: boolean;
+    studentId: string;
+    studentName: string;
+  }>({
+    isOpen: false,
+    studentId: "",
+    studentName: "",
   });
 
   // Toast bildirimi göster
   const showToast = (message: string, type: "success" | "error" = "error") => {
     const toastConfig = {
-      duration: type === 'error' ? 1500 : 1500,
-      position: 'top-right' as const,
+      duration: type === "error" ? 1500 : 1500,
+      position: "top-right" as const,
       style: {
         background: type === "error" ? "#EF4444" : "#10B981",
         color: "#fff",
@@ -634,24 +659,41 @@ export default function GraduationApprovalPage() {
   }
 
   // Onaylama işlemi için wrapper fonksiyon
-  const handleApproveConfirmation = (studentId: string, studentName: string, handler: (id: string, isApproved: boolean) => void) => {
+  const handleApproveConfirmation = (
+    studentId: string,
+    studentName: string,
+    handler: (id: string, isApproved: boolean) => void
+  ) => {
     setModalConfig({
       isOpen: true,
-      title: 'Approval Process',
+      title: "Approval Process",
       message: `Are you sure you want to approve the graduation application of ${studentName}?`,
-      type: 'approve',
+      type: "approve",
       onConfirm: () => handler(studentId, true),
     });
   };
 
   // Reddetme işlemi için wrapper fonksiyon
-  const handleRejectConfirmation = (studentId: string, studentName: string, handler: (id: string, isApproved: boolean) => void) => {
+  const handleRejectConfirmation = (
+    studentId: string,
+    studentName: string,
+    handler: (id: string, isApproved: boolean) => void
+  ) => {
     setModalConfig({
       isOpen: true,
-      title: 'Rejection Process',
+      title: "Rejection Process",
       message: `Are you sure you want to reject the graduation application of ${studentName}?`,
-      type: 'reject',
+      type: "reject",
       onConfirm: () => handler(studentId, false),
+    });
+  };
+
+  // Show transcript modal
+  const handleShowTranscript = (studentId: string, studentName: string) => {
+    setTranscriptModal({
+      isOpen: true,
+      studentId,
+      studentName,
     });
   };
 
@@ -681,11 +723,19 @@ export default function GraduationApprovalPage() {
         <Toaster />
         <ConfirmModal
           isOpen={modalConfig.isOpen}
-          onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+          onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
           onConfirm={modalConfig.onConfirm}
           title={modalConfig.title}
           message={modalConfig.message}
           type={modalConfig.type}
+        />
+        <TranscriptModal
+          isOpen={transcriptModal.isOpen}
+          onClose={() =>
+            setTranscriptModal((prev) => ({ ...prev, isOpen: false }))
+          }
+          studentId={transcriptModal.studentId}
+          studentName={transcriptModal.studentName}
         />
         <div className="p-8 max-w-4xl mx-auto">
           {error && (
@@ -719,10 +769,16 @@ export default function GraduationApprovalPage() {
                       {s.name} {s.surname}
                     </div>
                     <div className="text-sm text-gray-600">
-                      Department: <span className="text-gray-800">{s.departmentName || "-"}</span>
+                      Department:{" "}
+                      <span className="text-gray-800">
+                        {s.departmentName || "-"}
+                      </span>
                     </div>
                     <div className="text-sm text-gray-600">
-                      Student No: <span className="text-gray-800">{s.studentNumber || "-"}</span>
+                      Student No:{" "}
+                      <span className="text-gray-800">
+                        {s.studentNumber || "-"}
+                      </span>
                     </div>
                     <div className="mt-2">
                       <span
@@ -744,7 +800,23 @@ export default function GraduationApprovalPage() {
                   </div>
                   <div className="mt-4 md:mt-0 flex gap-3">
                     <button
-                      onClick={() => handleApproveConfirmation(s.id, `${s.name} ${s.surname}`, handleApproval)}
+                      onClick={() =>
+                        handleShowTranscript(s.id, `${s.name} ${s.surname}`)
+                      }
+                      className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                      title="View student's transcript"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Show Transcript
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleApproveConfirmation(
+                          s.id,
+                          `${s.name} ${s.surname}`,
+                          handleApproval
+                        )
+                      }
                       disabled={s.graduationProcess?.advisorApproved === true}
                       className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${
                         s.graduationProcess?.advisorApproved === true
@@ -761,7 +833,13 @@ export default function GraduationApprovalPage() {
                       Approve
                     </button>
                     <button
-                      onClick={() => handleRejectConfirmation(s.id, `${s.name} ${s.surname}`, handleApproval)}
+                      onClick={() =>
+                        handleRejectConfirmation(
+                          s.id,
+                          `${s.name} ${s.surname}`,
+                          handleApproval
+                        )
+                      }
                       disabled={s.graduationProcess?.advisorApproved === false}
                       className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all duration-200 ${
                         s.graduationProcess?.advisorApproved === false
@@ -794,11 +872,19 @@ export default function GraduationApprovalPage() {
         <Toaster />
         <ConfirmModal
           isOpen={modalConfig.isOpen}
-          onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+          onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
           onConfirm={modalConfig.onConfirm}
           title={modalConfig.title}
           message={modalConfig.message}
           type={modalConfig.type}
+        />
+        <TranscriptModal
+          isOpen={transcriptModal.isOpen}
+          onClose={() =>
+            setTranscriptModal((prev) => ({ ...prev, isOpen: false }))
+          }
+          studentId={transcriptModal.studentId}
+          studentName={transcriptModal.studentName}
         />
         <div className="p-8 max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
@@ -828,10 +914,16 @@ export default function GraduationApprovalPage() {
                         {s.name} {s.surname}
                       </div>
                       <div className="text-sm text-gray-600">
-                        Department: <span className="text-gray-800">{s.departmentName || "-"}</span>
+                        Department:{" "}
+                        <span className="text-gray-800">
+                          {s.departmentName || "-"}
+                        </span>
                       </div>
                       <div className="text-sm text-gray-600">
-                        Student No: <span className="text-gray-800">{s.studentNumber || "-"}</span>
+                        Student No:{" "}
+                        <span className="text-gray-800">
+                          {s.studentNumber || "-"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -864,7 +956,7 @@ export default function GraduationApprovalPage() {
                                 ? "#059669"
                                 : s.graduationProcess?.advisorApproved === false
                                 ? "#DC2626"
-                                : "#000000"
+                                : "#000000",
                             }}
                           >
                             {s.graduationProcess?.advisorApproved
@@ -898,20 +990,26 @@ export default function GraduationApprovalPage() {
                           <div
                             className="text-sm font-medium"
                             style={{
-                              color: !s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false
-                                ? "#6B7280"
-                                : s.graduationProcess?.departmentSecretaryApproved
-                                ? "#059669"
-                                : s.graduationProcess?.departmentSecretaryApproved === false
-                                ? "#DC2626"
-                                : "#000000"
+                              color:
+                                !s.graduationProcess?.advisorApproved ||
+                                s.graduationProcess?.advisorApproved === false
+                                  ? "#6B7280"
+                                  : s.graduationProcess
+                                      ?.departmentSecretaryApproved
+                                  ? "#059669"
+                                  : s.graduationProcess
+                                      ?.departmentSecretaryApproved === false
+                                  ? "#DC2626"
+                                  : "#000000",
                             }}
                           >
-                            {!s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false
+                            {!s.graduationProcess?.advisorApproved ||
+                            s.graduationProcess?.advisorApproved === false
                               ? "Advisor Approval Required"
                               : s.graduationProcess?.departmentSecretaryApproved
                               ? "Approved"
-                              : s.graduationProcess?.departmentSecretaryApproved === false
+                              : s.graduationProcess
+                                  ?.departmentSecretaryApproved === false
                               ? "Rejected"
                               : "Pending"}
                           </div>
@@ -922,7 +1020,23 @@ export default function GraduationApprovalPage() {
                     {/* Approval Buttons */}
                     <div className="mt-4 flex justify-end gap-2">
                       <button
-                        onClick={() => handleApproveConfirmation(s.id, `${s.name} ${s.surname}`, handleDepartmentSecretaryApproval)}
+                        onClick={() =>
+                          handleShowTranscript(s.id, `${s.name} ${s.surname}`)
+                        }
+                        className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                        title="View student's transcript"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Show Transcript
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleApproveConfirmation(
+                            s.id,
+                            `${s.name} ${s.surname}`,
+                            handleDepartmentSecretaryApproval
+                          )
+                        }
                         disabled={
                           !s.graduationProcess?.advisorApproved ||
                           s.graduationProcess?.advisorApproved === false ||
@@ -952,7 +1066,13 @@ export default function GraduationApprovalPage() {
                         Approve
                       </button>
                       <button
-                        onClick={() => handleRejectConfirmation(s.id, `${s.name} ${s.surname}`, handleDepartmentSecretaryApproval)}
+                        onClick={() =>
+                          handleRejectConfirmation(
+                            s.id,
+                            `${s.name} ${s.surname}`,
+                            handleDepartmentSecretaryApproval
+                          )
+                        }
                         disabled={
                           !s.graduationProcess?.advisorApproved ||
                           s.graduationProcess?.advisorApproved === false ||
@@ -999,11 +1119,19 @@ export default function GraduationApprovalPage() {
         <Toaster />
         <ConfirmModal
           isOpen={modalConfig.isOpen}
-          onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+          onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
           onConfirm={modalConfig.onConfirm}
           title={modalConfig.title}
           message={modalConfig.message}
           type={modalConfig.type}
+        />
+        <TranscriptModal
+          isOpen={transcriptModal.isOpen}
+          onClose={() =>
+            setTranscriptModal((prev) => ({ ...prev, isOpen: false }))
+          }
+          studentId={transcriptModal.studentId}
+          studentName={transcriptModal.studentName}
         />
         <div className="p-8 max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
@@ -1033,10 +1161,16 @@ export default function GraduationApprovalPage() {
                         {s.name} {s.surname}
                       </div>
                       <div className="text-sm text-gray-600">
-                        Department: <span className="text-gray-800">{s.departmentName || "-"}</span>
+                        Department:{" "}
+                        <span className="text-gray-800">
+                          {s.departmentName || "-"}
+                        </span>
                       </div>
                       <div className="text-sm text-gray-600">
-                        Student No: <span className="text-gray-800">{s.studentNumber || "-"}</span>
+                        Student No:{" "}
+                        <span className="text-gray-800">
+                          {s.studentNumber || "-"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1069,7 +1203,7 @@ export default function GraduationApprovalPage() {
                                 ? "#059669"
                                 : s.graduationProcess?.advisorApproved === false
                                 ? "#DC2626"
-                                : "#000000"
+                                : "#000000",
                             }}
                           >
                             {s.graduationProcess?.advisorApproved
@@ -1103,20 +1237,26 @@ export default function GraduationApprovalPage() {
                           <div
                             className="text-sm font-medium"
                             style={{
-                              color: !s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false
-                                ? "#6B7280"
-                                : s.graduationProcess?.departmentSecretaryApproved
-                                ? "#059669"
-                                : s.graduationProcess?.departmentSecretaryApproved === false
-                                ? "#DC2626"
-                                : "#000000"
+                              color:
+                                !s.graduationProcess?.advisorApproved ||
+                                s.graduationProcess?.advisorApproved === false
+                                  ? "#6B7280"
+                                  : s.graduationProcess
+                                      ?.departmentSecretaryApproved
+                                  ? "#059669"
+                                  : s.graduationProcess
+                                      ?.departmentSecretaryApproved === false
+                                  ? "#DC2626"
+                                  : "#000000",
                             }}
                           >
-                            {!s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false
+                            {!s.graduationProcess?.advisorApproved ||
+                            s.graduationProcess?.advisorApproved === false
                               ? "Advisor Approval Required"
                               : s.graduationProcess?.departmentSecretaryApproved
                               ? "Approved"
-                              : s.graduationProcess?.departmentSecretaryApproved === false
+                              : s.graduationProcess
+                                  ?.departmentSecretaryApproved === false
                               ? "Rejected"
                               : "Pending"}
                           </div>
@@ -1148,23 +1288,36 @@ export default function GraduationApprovalPage() {
                           <div
                             className="text-sm font-medium"
                             style={{
-                              color: !s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false ||
-                                    !s.graduationProcess?.departmentSecretaryApproved || s.graduationProcess?.departmentSecretaryApproved === false
-                                ? "#6B7280"
-                                : s.graduationProcess?.facultyDeansOfficeApproved
-                                ? "#059669"
-                                : s.graduationProcess?.facultyDeansOfficeApproved === false
-                                ? "#DC2626"
-                                : "#000000"
+                              color:
+                                !s.graduationProcess?.advisorApproved ||
+                                s.graduationProcess?.advisorApproved ===
+                                  false ||
+                                !s.graduationProcess
+                                  ?.departmentSecretaryApproved ||
+                                s.graduationProcess
+                                  ?.departmentSecretaryApproved === false
+                                  ? "#6B7280"
+                                  : s.graduationProcess
+                                      ?.facultyDeansOfficeApproved
+                                  ? "#059669"
+                                  : s.graduationProcess
+                                      ?.facultyDeansOfficeApproved === false
+                                  ? "#DC2626"
+                                  : "#000000",
                             }}
                           >
-                            {!s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false
+                            {!s.graduationProcess?.advisorApproved ||
+                            s.graduationProcess?.advisorApproved === false
                               ? "Advisor Approval Required"
-                              : !s.graduationProcess?.departmentSecretaryApproved || s.graduationProcess?.departmentSecretaryApproved === false
+                              : !s.graduationProcess
+                                  ?.departmentSecretaryApproved ||
+                                s.graduationProcess
+                                  ?.departmentSecretaryApproved === false
                               ? "Department Secretary Approval Required"
                               : s.graduationProcess?.facultyDeansOfficeApproved
                               ? "Approved"
-                              : s.graduationProcess?.facultyDeansOfficeApproved === false
+                              : s.graduationProcess
+                                  ?.facultyDeansOfficeApproved === false
                               ? "Rejected"
                               : "Pending"}
                           </div>
@@ -1199,23 +1352,39 @@ export default function GraduationApprovalPage() {
                           <div
                             className="text-sm font-medium"
                             style={{
-                              color: !s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false ||
-                                    !s.graduationProcess?.departmentSecretaryApproved || s.graduationProcess?.departmentSecretaryApproved === false ||
-                                    !s.graduationProcess?.facultyDeansOfficeApproved || s.graduationProcess?.facultyDeansOfficeApproved === false
-                                ? "#6B7280"
-                                : s.graduationProcess?.studentAffairsApproved
-                                ? "#059669"
-                                : s.graduationProcess?.studentAffairsApproved ===
-                                  false
-                                ? "#DC2626"
-                                : "#000000"
+                              color:
+                                !s.graduationProcess?.advisorApproved ||
+                                s.graduationProcess?.advisorApproved ===
+                                  false ||
+                                !s.graduationProcess
+                                  ?.departmentSecretaryApproved ||
+                                s.graduationProcess
+                                  ?.departmentSecretaryApproved === false ||
+                                !s.graduationProcess
+                                  ?.facultyDeansOfficeApproved ||
+                                s.graduationProcess
+                                  ?.facultyDeansOfficeApproved === false
+                                  ? "#6B7280"
+                                  : s.graduationProcess?.studentAffairsApproved
+                                  ? "#059669"
+                                  : s.graduationProcess
+                                      ?.studentAffairsApproved === false
+                                  ? "#DC2626"
+                                  : "#000000",
                             }}
                           >
-                            {!s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false
+                            {!s.graduationProcess?.advisorApproved ||
+                            s.graduationProcess?.advisorApproved === false
                               ? "Advisor Approval Required"
-                              : !s.graduationProcess?.departmentSecretaryApproved || s.graduationProcess?.departmentSecretaryApproved === false
+                              : !s.graduationProcess
+                                  ?.departmentSecretaryApproved ||
+                                s.graduationProcess
+                                  ?.departmentSecretaryApproved === false
                               ? "Department Secretary Approval Required"
-                              : !s.graduationProcess?.facultyDeansOfficeApproved || s.graduationProcess?.facultyDeansOfficeApproved === false
+                              : !s.graduationProcess
+                                  ?.facultyDeansOfficeApproved ||
+                                s.graduationProcess
+                                  ?.facultyDeansOfficeApproved === false
                               ? "Faculty Dean's Office Approval Required"
                               : s.graduationProcess?.studentAffairsApproved
                               ? "Approved"
@@ -1232,7 +1401,23 @@ export default function GraduationApprovalPage() {
                   {/* Approval Buttons */}
                   <div className="mt-4 flex justify-end gap-2">
                     <button
-                      onClick={() => handleApproveConfirmation(s.id, `${s.name} ${s.surname}`, handleStudentAffairsApproval)}
+                      onClick={() =>
+                        handleShowTranscript(s.id, `${s.name} ${s.surname}`)
+                      }
+                      className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                      title="View student's transcript"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Show Transcript
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleApproveConfirmation(
+                          s.id,
+                          `${s.name} ${s.surname}`,
+                          handleStudentAffairsApproval
+                        )
+                      }
                       disabled={
                         !s.graduationProcess?.advisorApproved ||
                         s.graduationProcess?.advisorApproved === false ||
@@ -1279,7 +1464,13 @@ export default function GraduationApprovalPage() {
                       Approve
                     </button>
                     <button
-                      onClick={() => handleRejectConfirmation(s.id, `${s.name} ${s.surname}`, handleStudentAffairsApproval)}
+                      onClick={() =>
+                        handleRejectConfirmation(
+                          s.id,
+                          `${s.name} ${s.surname}`,
+                          handleStudentAffairsApproval
+                        )
+                      }
                       disabled={
                         !s.graduationProcess?.advisorApproved ||
                         s.graduationProcess?.advisorApproved === false ||
@@ -1344,11 +1535,19 @@ export default function GraduationApprovalPage() {
         <Toaster />
         <ConfirmModal
           isOpen={modalConfig.isOpen}
-          onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+          onClose={() => setModalConfig((prev) => ({ ...prev, isOpen: false }))}
           onConfirm={modalConfig.onConfirm}
           title={modalConfig.title}
           message={modalConfig.message}
           type={modalConfig.type}
+        />
+        <TranscriptModal
+          isOpen={transcriptModal.isOpen}
+          onClose={() =>
+            setTranscriptModal((prev) => ({ ...prev, isOpen: false }))
+          }
+          studentId={transcriptModal.studentId}
+          studentName={transcriptModal.studentName}
         />
         <div className="p-8 max-w-4xl mx-auto">
           <div className="flex items-center gap-4 mb-8">
@@ -1378,10 +1577,16 @@ export default function GraduationApprovalPage() {
                         {s.name} {s.surname}
                       </div>
                       <div className="text-sm text-gray-600">
-                        Department: <span className="text-gray-800">{s.departmentName || "-"}</span>
+                        Department:{" "}
+                        <span className="text-gray-800">
+                          {s.departmentName || "-"}
+                        </span>
                       </div>
                       <div className="text-sm text-gray-600">
-                        Student No: <span className="text-gray-800">{s.studentNumber || "-"}</span>
+                        Student No:{" "}
+                        <span className="text-gray-800">
+                          {s.studentNumber || "-"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1414,7 +1619,7 @@ export default function GraduationApprovalPage() {
                                 ? "#059669"
                                 : s.graduationProcess?.advisorApproved === false
                                 ? "#DC2626"
-                                : "#000000"
+                                : "#000000",
                             }}
                           >
                             {s.graduationProcess?.advisorApproved
@@ -1451,7 +1656,7 @@ export default function GraduationApprovalPage() {
                                 : s.graduationProcess
                                     ?.departmentSecretaryApproved === false
                                 ? "#DC2626"
-                                : "#000000"
+                                : "#000000",
                             }}
                           >
                             {s.graduationProcess?.departmentSecretaryApproved
@@ -1489,23 +1694,36 @@ export default function GraduationApprovalPage() {
                           <div
                             className="text-sm font-medium"
                             style={{
-                              color: !s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false ||
-                                    !s.graduationProcess?.departmentSecretaryApproved || s.graduationProcess?.departmentSecretaryApproved === false
-                                ? "#6B7280"
-                                : s.graduationProcess?.facultyDeansOfficeApproved
-                                ? "#059669"
-                                : s.graduationProcess?.facultyDeansOfficeApproved === false
-                                ? "#DC2626"
-                                : "#000000"
+                              color:
+                                !s.graduationProcess?.advisorApproved ||
+                                s.graduationProcess?.advisorApproved ===
+                                  false ||
+                                !s.graduationProcess
+                                  ?.departmentSecretaryApproved ||
+                                s.graduationProcess
+                                  ?.departmentSecretaryApproved === false
+                                  ? "#6B7280"
+                                  : s.graduationProcess
+                                      ?.facultyDeansOfficeApproved
+                                  ? "#059669"
+                                  : s.graduationProcess
+                                      ?.facultyDeansOfficeApproved === false
+                                  ? "#DC2626"
+                                  : "#000000",
                             }}
                           >
-                            {!s.graduationProcess?.advisorApproved || s.graduationProcess?.advisorApproved === false
+                            {!s.graduationProcess?.advisorApproved ||
+                            s.graduationProcess?.advisorApproved === false
                               ? "Advisor Approval Required"
-                              : !s.graduationProcess?.departmentSecretaryApproved || s.graduationProcess?.departmentSecretaryApproved === false
+                              : !s.graduationProcess
+                                  ?.departmentSecretaryApproved ||
+                                s.graduationProcess
+                                  ?.departmentSecretaryApproved === false
                               ? "Department Secretary Approval Required"
                               : s.graduationProcess?.facultyDeansOfficeApproved
                               ? "Approved"
-                              : s.graduationProcess?.facultyDeansOfficeApproved === false
+                              : s.graduationProcess
+                                  ?.facultyDeansOfficeApproved === false
                               ? "Rejected"
                               : "Pending"}
                           </div>
@@ -1517,7 +1735,23 @@ export default function GraduationApprovalPage() {
                   {/* Approval Buttons */}
                   <div className="mt-4 flex justify-end gap-2">
                     <button
-                      onClick={() => handleApproveConfirmation(s.id, `${s.name} ${s.surname}`, handleFacultyDeansApproval)}
+                      onClick={() =>
+                        handleShowTranscript(s.id, `${s.name} ${s.surname}`)
+                      }
+                      className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                      title="View student's transcript"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Show Transcript
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleApproveConfirmation(
+                          s.id,
+                          `${s.name} ${s.surname}`,
+                          handleFacultyDeansApproval
+                        )
+                      }
                       disabled={
                         !s.graduationProcess?.advisorApproved ||
                         s.graduationProcess?.advisorApproved === false ||
@@ -1556,7 +1790,13 @@ export default function GraduationApprovalPage() {
                       Approve
                     </button>
                     <button
-                      onClick={() => handleRejectConfirmation(s.id, `${s.name} ${s.surname}`, handleFacultyDeansApproval)}
+                      onClick={() =>
+                        handleRejectConfirmation(
+                          s.id,
+                          `${s.name} ${s.surname}`,
+                          handleFacultyDeansApproval
+                        )
+                      }
                       disabled={
                         !s.graduationProcess?.advisorApproved ||
                         s.graduationProcess?.advisorApproved === false ||
