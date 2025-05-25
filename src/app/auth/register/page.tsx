@@ -10,7 +10,6 @@ import { useAuthStore } from "@/store/auth";
 import { AuthState } from "@/store/auth";
 import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import Image from "next/image";
 
 const registerSchema = z.object({
   email: z
@@ -60,7 +59,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setError(null);
-      await authService.register(data);
+      const response = await authService.register(data);
       
       // Başarılı kayıt bildirimi göster
       toast.success("Registration successful! Redirecting to login...", {
@@ -79,23 +78,26 @@ export default function RegisterPage() {
         router.push("/auth/login");
       }, 2000);
 
-    } catch (error: Error | unknown) {
+    } catch (error: any) {
       console.error("Register error:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "An error occurred during registration. Please try again.";
-      
-      toast.error(errorMessage, {
-        duration: 3000,
-        position: "top-right",
-        style: {
-          background: '#EF4444',
-          color: '#fff',
-          padding: '16px',
-          borderRadius: '8px',
+      toast.error(
+        error.response?.data?.message ||
+        "An error occurred during registration. Please try again.",
+        {
+          duration: 3000,
+          position: "top-right",
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+          }
         }
-      });
-      setError(errorMessage);
+      );
+      setError(
+        error.response?.data?.message ||
+        "An error occurred during registration. Please try again."
+      );
     }
   };
 
@@ -108,11 +110,9 @@ export default function RegisterPage() {
       <div className="absolute inset-0 bg-black/80 z-0" />
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen w-full">
         <div className="mx-auto w-full max-w-md bg-white/90 rounded-2xl shadow-2xl px-8 py-8 flex flex-col items-center">
-          <Image
+          <img
             src="/iztech-logo.png"
             alt="İztech Logo"
-            width={96}
-            height={96}
             className="w-24 h-24 mb-4 rounded-full bg-white p-2 shadow"
           />
           <h1 className="text-2xl font-bold text-center text-[#7c0a02] mb-6 ">

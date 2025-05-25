@@ -126,6 +126,28 @@ export default function SeveranceRequestsPage() {
     }
   };
 
+  const handleNewRequest = () => {
+    const request: SeveranceRequest = {
+      id: Date.now().toString(),
+      studentId: user?.id || "",
+      studentName: `${user?.name} ${user?.surname}`,
+      studentNumber: "301", // This would come from student profile
+      department: "Computer Engineering", // This would come from student profile
+      requestDate: new Date().toISOString().split("T")[0],
+      reason: newRequest.reason,
+      status: "pending",
+      documents: newRequest.documents.map((file, index) => ({
+        id: Date.now() + index.toString(),
+        name: file.name,
+        type: "Document",
+      })),
+    };
+
+    setRequests([request, ...requests]);
+    setShowNewRequestMessage(false);
+    setNewRequest({ reason: "", documents: [] });
+  };
+
   const handleStatusUpdate = (
     requestId: string,
     newStatus: "approved" | "rejected",

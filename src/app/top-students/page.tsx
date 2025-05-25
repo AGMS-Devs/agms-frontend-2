@@ -4,7 +4,7 @@ import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 interface Student {
@@ -273,7 +273,7 @@ export default function TopStudentsPage() {
     }
   };
 
-  const fetchStudents = useCallback(async () => {
+  const fetchStudents = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -315,7 +315,7 @@ export default function TopStudentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -335,7 +335,7 @@ export default function TopStudentsPage() {
     };
 
     init();
-  }, [user, router, fetchStudents]);
+  }, [user, router]);
 
   const getDisplayedStudents = () => {
     if (selectedFaculty === "All Students") {

@@ -7,8 +7,6 @@ import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { User } from "@/types/auth";
-import { GraduationProcess } from "@/types/graduation";
 
 const BACKEND_URL = "/graduationprocesses";
 const ROLE_ENDPOINT_MAP: Record<string, string> = {
@@ -18,18 +16,9 @@ const ROLE_ENDPOINT_MAP: Record<string, string> = {
   studentAffairs: `${BACKEND_URL}/approve-by-student-affairs`,
 };
 
-interface Student {
-  id: string;
-  name: string;
-  surname: string;
-  studentNumber: string;
-  departmentId: string;
-  graduationProcess?: GraduationProcess;
-}
-
-function getApprovalStep(user: User | null) {
+function getApprovalStep(user: any) {
   if (!user) return null;
-  if (user.userType === 2) return "advisor";
+  if (user.userType === 2 || user.role === "advisor") return "advisor";
   if (user.userType === 1) {
     switch (user.staffRole) {
       case 3:
@@ -45,7 +34,7 @@ function getApprovalStep(user: User | null) {
   return null;
 }
 
-function canApprove(process: GraduationProcess, step: string) {
+function canApprove(process: any, step: string) {
   if (step === "advisor") return !process.advisorApproved;
   if (step === "departmentSecretary")
     return process.advisorApproved && !process.departmentSecretaryApproved;
@@ -120,8 +109,8 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, type }: Conf
 
 export default function GraduationApprovalPage() {
   const { user } = useAuthStore();
-  const [processes, setProcesses] = useState<GraduationProcess[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [processes, setProcesses] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -162,8 +151,8 @@ export default function GraduationApprovalPage() {
   };
 
   // Hata durumunu yönet
-  const handleError = (error: Error | unknown, defaultMessage: string) => {
-    const errorMessage = error instanceof Error ? error.message : defaultMessage;
+  const handleError = (error: any, defaultMessage: string) => {
+    const errorMessage = error.response?.data?.message || defaultMessage;
     setError(errorMessage);
     showToast(errorMessage);
   };
@@ -173,7 +162,7 @@ export default function GraduationApprovalPage() {
     try {
       const res = await axiosInstance.get(endpoint, { params });
       return res.data.items || res.data;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   };
@@ -195,7 +184,7 @@ export default function GraduationApprovalPage() {
 
       // Her öğrenci için graduation process bilgisini al
       const studentsWithGraduationProcess = await Promise.all(
-        studentsData.map(async (student: Student) => {
+        studentsData.map(async (student: any) => {
           try {
             const graduationProcessRes = await axiosInstance.get(
               `/graduationprocesses/by-student/${student.id}`
@@ -208,15 +197,26 @@ export default function GraduationApprovalPage() {
             // Eğer graduation process bulunamazsa, varsayılan değerlerle devam et
             return {
               ...student,
-              graduationProcess: null,
+              graduationProcess: {
+                advisorApproved: false,
+                departmentSecretaryApproved: false,
+                facultyDeansOfficeApproved: false,
+                studentAffairsApproved: false,
+              },
             };
           }
         })
       );
 
       setStudents(studentsWithGraduationProcess);
-    } catch (error) {
-      handleError(error, "Öğrenci bilgileri alınamadı.");
+    } catch (error: any) {
+      console.error("fetchAdvisorStudents hata detayları:", {
+        error: error,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      handleError(error, "Öğrenci listesi alınamadı.");
     } finally {
       setLoading(false);
     }

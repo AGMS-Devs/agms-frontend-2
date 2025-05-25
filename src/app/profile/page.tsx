@@ -9,7 +9,6 @@ import { useAuthStore } from "@/store/auth";
 import { authService } from "@/services/auth";
 import { axiosInstance } from "@/lib/axios";
 import { User } from "@/types/auth";
-import { Student } from "@/types/student";
 
 const passwordSchema = z
   .object({
@@ -75,7 +74,7 @@ const getDepartmentText = (userType: number, staffRole?: number) => {
 export default function ProfilePage() {
   const { user: storeUser, setUser } = useAuthStore();
   const [currentUser, setCurrentUser] = useState<User | null>(storeUser);
-  const [studentData, setStudentData] = useState<Student | null>(null);
+  const [studentData, setStudentData] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -122,7 +121,7 @@ export default function ProfilePage() {
     };
 
     fetchCurrentUser();
-  }, [setUser, storeUser]);
+  }, [setUser]);
 
   const onPasswordSubmit = async (data: PasswordFormData) => {
     try {
@@ -137,10 +136,15 @@ export default function ProfilePage() {
 
       setSuccessMessage("Your password has been changed successfully!");
       reset();
-    } catch (error: Error | unknown) {
+    } catch (error: any) {
       console.error("Password change error:", error);
-      const errorMessage = error instanceof Error ? error.message : "An error occurred while changing the password. Please try again.";
-      setErrorMessage(errorMessage);
+      if (error.response?.status === 400) {
+        setErrorMessage("Current password is incorrect!");
+      } else {
+        setErrorMessage(
+          "An error occurred while changing the password. Please try again."
+        );
+      }
     } finally {
       setPasswordLoading(false);
     }
@@ -292,7 +296,12 @@ export default function ProfilePage() {
             )}
             {errorMessage && (
               <div className="rounded-md bg-red-50 p-4 text-red-800 text-sm">
-                {errorMessage}
+                {errorMessage === "Current password is incorrect!"
+                  ? "Current password is incorrect!"
+                  : errorMessage ===
+                    "An error occurred while changing the password. Please try again."
+                  ? "An error occurred while changing the password. Please try again."
+                  : errorMessage}
               </div>
             )}
 
