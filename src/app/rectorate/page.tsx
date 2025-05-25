@@ -4,7 +4,7 @@ import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
 interface Student {
@@ -189,7 +189,7 @@ export default function RectoratePage() {
     }
   };
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
@@ -198,65 +198,31 @@ export default function RectoratePage() {
       }
 
       const res = await axios.get("http://localhost:5278/api/TopStudentLists", {
-        params: {
-          PageIndex: 0,
-          PageSize: 50,
-        },
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
       });
 
-      if (Array.isArray(res.data.items) && res.data.items.length > 0) {
-        // Sadece rektörlüğe gönderilmiş listeleri filtrele
-        const sentToRectorateLists = res.data.items.filter(
-          (list: TopStudentList) => list.sendRectorate
-        );
-        setLists(sentToRectorateLists);
-      } else {
-        setFeedback({
-          type: "error",
-          message: "Rektörlüğe gönderilmiş liste bulunamadı.",
-        });
-      }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 401) {
-          router.replace("/auth/login");
-        }
-
-        setFeedback({
-          type: "error",
-          message: err.response?.data?.message || "Bir hata oluştu.",
-        });
-      }
-      setLists([]);
+      setLists(res.data);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      setFeedback({
+        type: "error",
+        message: "Öğrenci listesi alınamadı!",
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     const init = async () => {
-      // Check authentication first
-      const token = localStorage.getItem("accessToken");
-      if (!user || !token) {
-        window.location.href = "/auth/login";
-        return;
-      }
-
-      // Sadece rektörlük personeli erişebilir (userType: 1, staffRole: 0)
-      if (user.userType !== 1 || user.staffRole !== 0) {
-        router.replace("/dashboard");
-        return;
-      }
-
+      setLoading(true);
       await fetchStudents();
     };
 
     init();
-  }, [user, router]);
+  }, [fetchStudents]);
 
   const getDisplayedStudents = () => {
     if (selectedFaculty === "All Students") {

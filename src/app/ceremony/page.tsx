@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/store/auth";
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 import { ceremonyService } from "@/services/ceremony";
@@ -50,14 +50,10 @@ export default function CeremonyPlanningPage() {
     ceremonyDescription: "",
     ceremonyStatus: CeremonyStatus.Pending,
     academicYear: "",
-    studentAffairsId: STUDENT_AFFAIRS_ID, // Use the correct ID from backend seed data
+    studentAffairsId: STUDENT_AFFAIRS_ID,
   });
 
-  useEffect(() => {
-    fetchCeremonies();
-  }, [currentPage]);
-
-  const fetchCeremonies = async () => {
+  const fetchCeremonies = useCallback(async () => {
     try {
       setLoading(true);
       console.log("📡 Fetching ceremonies from API...");
@@ -77,7 +73,11 @@ export default function CeremonyPlanningPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
+
+  useEffect(() => {
+    fetchCeremonies();
+  }, [currentPage, fetchCeremonies]);
 
   const handleUpdateGraduationStatuses = async () => {
     try {

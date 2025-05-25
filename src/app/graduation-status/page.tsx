@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/store/auth";
 import { axiosInstance } from "@/lib/axios";
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
@@ -39,11 +39,7 @@ export default function GraduationStatusPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  useEffect(() => {
-    fetchTranscriptData();
-  }, []);
-
-  const fetchTranscriptData = async () => {
+  const fetchTranscriptData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -60,11 +56,11 @@ export default function GraduationStatusPage() {
       const transcripts = response.data.items || [];
       console.log("All transcripts:", transcripts);
 
-      const myTranscript = transcripts.find((t: any) => {
+      const myTranscript = transcripts.find((t: TranscriptData) => {
         console.log(
-          `Comparing transcript studentId: ${t.studentId} with user id: ${user?.id}`
+          `Comparing transcript studentId: ${t.studentIdentityNumber} with user id: ${user?.id}`
         );
-        return t.studentId === user?.id;
+        return t.studentIdentityNumber === user?.id;
       });
 
       console.log("Found my transcript:", myTranscript);
@@ -75,17 +71,18 @@ export default function GraduationStatusPage() {
         console.log("No transcript found for current user");
         setError("No transcript found yet.");
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error fetching transcript data:", error);
-      console.error("Error response:", error.response?.data);
-      setError(
-        "An error occurred while loading transcript data: " +
-          (error.response?.data?.message || error.message)
-      );
+      const errorMessage = error instanceof Error ? error.message : "An error occurred while loading transcript data";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchTranscriptData();
+  }, [fetchTranscriptData]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

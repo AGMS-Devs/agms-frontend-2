@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/auth";
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
 import SendMessageModal from "@/components/modals/SendMessageModal";
@@ -16,6 +16,7 @@ import {
   Check,
   Trash2,
 } from "lucide-react";
+import { Student } from "@/types/student";
 
 export default function InboxPage() {
   const { user } = useAuthStore();
@@ -25,7 +26,7 @@ export default function InboxPage() {
   const [showSendMessageModal, setShowSendMessageModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [studentData, setStudentData] = useState<any>(null);
+  const [studentData, setStudentData] = useState<Student | null>(null);
   const [markingAsRead, setMarkingAsRead] = useState<string | null>(null);
   const [deletingMessage, setDeletingMessage] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{
@@ -62,7 +63,7 @@ export default function InboxPage() {
   }, [isStudent, user]);
 
   // Fetch messages
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -80,19 +81,19 @@ export default function InboxPage() {
         const response = await messageService.getMessages();
         setMessages(response.items);
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error fetching messages:", error);
       setError("Failed to load messages. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, isStudent, isAdvisor, studentData]);
 
   useEffect(() => {
     if (user && (!isStudent || studentData)) {
       fetchMessages();
     }
-  }, [user, studentData, isStudent, isAdvisor]);
+  }, [user, studentData, isStudent, isAdvisor, fetchMessages]);
 
   const handleMessageSent = () => {
     // Refresh messages after sending
@@ -117,7 +118,7 @@ export default function InboxPage() {
           msg.id === message.id ? { ...msg, isRead: true } : msg
         )
       );
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error marking message as read:", error);
       setError("Failed to mark message as read. Please try again.");
     } finally {
@@ -143,7 +144,7 @@ export default function InboxPage() {
       setMessages((prevMessages) =>
         prevMessages.map((msg) => ({ ...msg, isRead: true }))
       );
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error marking all messages as read:", error);
       setError("Failed to mark all messages as read. Please try again.");
     } finally {
@@ -165,7 +166,7 @@ export default function InboxPage() {
       if (selectedMessage?.id === messageId) {
         setSelectedMessage(null);
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error deleting message:", error);
       setError("Failed to delete message. Please try again.");
     } finally {
@@ -186,7 +187,7 @@ export default function InboxPage() {
       // Clear all messages from local state
       setMessages([]);
       setSelectedMessage(null);
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Error deleting all messages:", error);
       setError("Failed to delete all messages. Please try again.");
     } finally {

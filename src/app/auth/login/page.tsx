@@ -8,6 +8,7 @@ import Link from "next/link";
 import { authService } from "@/services/auth";
 import { useAuthStore } from "@/store/auth";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -60,12 +61,14 @@ export default function LoginPage() {
 
       console.log("User state updated, redirecting...");
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Login error:", error);
-      if (error.response?.status === 500) {
-        setError("Incorrect email or password");
-      } else if (error.message === "Invalid response from server") {
-        setError("Invalid response from server. Please try again later.");
+      if (error instanceof Error) {
+        if (error.message === "Invalid response from server") {
+          setError("Invalid response from server. Please try again later.");
+        } else {
+          setError("An error occurred during login. Please try again.");
+        }
       } else {
         setError("An error occurred during login. Please try again.");
       }
@@ -80,9 +83,11 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-black/80 z-0" />
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen w-full">
         <div className="mx-auto w-full max-w-md bg-white/90 rounded-2xl shadow-2xl px-8 py-10 flex flex-col items-center">
-          <img
+          <Image
             src="/iztech-logo.png"
             alt="Iztech Logo"
+            width={96}
+            height={96}
             className="w-24 h-24 mb-4 rounded-full bg-white p-2 shadow"
           />
           <h1 className="text-2xl font-bold text-center text-[#7c0a02] mb-6">
@@ -149,7 +154,7 @@ export default function LoginPage() {
                 href="/auth/register"
                 className="text-xs text-[#7c0a02] hover:underline"
               >
-                Don't have an account? Register
+                Don&apos;t have an account? Register
               </Link>
             </div>
           </form>
