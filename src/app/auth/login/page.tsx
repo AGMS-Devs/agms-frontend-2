@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { authService } from "@/services/auth";
 import { useAuthStore } from "@/store/auth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -16,7 +16,7 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setUser = useAuthStore((state) => state.setUser);
@@ -156,5 +156,36 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen w-full flex items-center justify-center bg-cover bg-center relative"
+          style={{ backgroundImage: "url(/graduation-bg.jpg)" }}
+        >
+          <div className="absolute inset-0 bg-black/80 z-0" />
+          <div className="relative z-10 flex items-center justify-center">
+            <div className="bg-white/90 rounded-2xl shadow-2xl px-8 py-10">
+              <div className="animate-pulse">
+                <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-6"></div>
+                <div className="space-y-4">
+                  <div className="h-10 bg-gray-200 rounded"></div>
+                  <div className="h-10 bg-gray-200 rounded"></div>
+                  <div className="h-10 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }
