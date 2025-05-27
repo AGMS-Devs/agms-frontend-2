@@ -158,7 +158,7 @@ export default function GraduationApprovalPage() {
   // Toast bildirimi göster
   const showToast = (message: string, type: "success" | "error" = "error") => {
     const toastConfig = {
-      duration: type === "error" ? 1500 : 1500,
+      duration: type === "error" ? 5000 : 5000,
       position: "top-right" as const,
       style: {
         background: type === "error" ? "#EF4444" : "#10B981",
